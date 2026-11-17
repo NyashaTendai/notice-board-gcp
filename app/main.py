@@ -1,0 +1,22 @@
+import os
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+PAGE = b"<html><body><h1>Notice Board</h1><p>Running on Google Cloud Run.</p></body></html>"
+
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == "/health":
+            body, ctype = b"ok", "text/plain"
+        else:
+            body, ctype = PAGE, "text/html"
+        self.send_response(200)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", "8080"))
+    HTTPServer(("0.0.0.0", port), Handler).serve_forever()
