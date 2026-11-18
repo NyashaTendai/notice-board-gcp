@@ -12,3 +12,8 @@ variable "image_tag" {
   type    = string
   default = "v1"
 }
+
+variable "github_repo" {
+  type    = string
+  default = "NyashaTendai/notice-board-gcp"
+}
