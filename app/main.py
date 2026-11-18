@@ -1,7 +1,7 @@
 import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-PAGE = b"<html><body><h1>Notice Board</h1><p>Running on Google Cloud Run.</p></body></html>"
+PAGE = b"<html><body><h1>Notice Board</h1><p>Deployed automatically by GitHub Actions.</p></body></html>"
 
 
 class Handler(BaseHTTPRequestHandler):
