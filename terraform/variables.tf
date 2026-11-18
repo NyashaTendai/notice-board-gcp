@@ -17,3 +17,7 @@ variable "github_repo" {
   type    = string
   default = "NyashaTendai/notice-board-gcp"
 }
+
+variable "alert_email" {
+  type = string
+}
