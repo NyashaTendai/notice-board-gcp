@@ -7,7 +7,7 @@ PAGE = b"<html><body><h1>Notice Board</h1><p>Deployed automatically by GitHub Ac
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
-            body, ctype = b"ok", "text/plain"
+            body, ctype = b"broken", "text/plain"
         else:
             body, ctype = PAGE, "text/html"
         self.send_response(200)
