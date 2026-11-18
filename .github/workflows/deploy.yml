@@ -1,0 +1,65 @@
+name: Deploy Notice Board
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "Dockerfile"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID: notice-board-29499
+  REGION: us-central1
+  SERVICE: notice-board
+  IMAGE: us-central1-docker.pkg.dev/notice-board-29499/notice-board/app
+  WIF_PROVIDER: projects/339121337217/locations/global/workloadIdentityPools/github/providers/github-actions
+  DEPLOYER_SA: github-deployer@notice-board-29499.iam.gserviceaccount.com
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start the app and test /health
+        run: |
+          python3 app/main.py &
+          sleep 2
+          test "$(curl -fsS localhost:8080/health)" = "ok"
+
+  deploy:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Google Cloud (no stored key)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.DEPLOYER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Let Docker push to Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+      - name: Build image tagged with the commit
+        run: docker build -t "$IMAGE:${GITHUB_SHA::7}" .
+
+      - name: Push image
+        run: docker push "$IMAGE:${GITHUB_SHA::7}"
+
+      - name: Deploy to Cloud Run
+        run: gcloud run services update "$SERVICE" --region "$REGION" --project "$PROJECT_ID" --image "$IMAGE:${GITHUB_SHA::7}"
+
+      - name: Health check the live site
+        run: |
+          URL=$(gcloud run services describe "$SERVICE" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')
+          curl -fsS "$URL/health"
